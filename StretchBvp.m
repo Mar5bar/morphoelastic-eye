@@ -17,7 +17,7 @@ function sol = StretchBvp(sigma,rho,init_guess,corneal_r,corneal_theta,IOP,C,H,p
 	F.Method = 'spline';
 
 	% Call bvp4c.
-	options = bvpset('RelTol',bvp_tolerance,'AbsTol',bvp_tolerance,'Stats','on',...
+	options = bvpset('RelTol',bvp_tolerance,'AbsTol',bvp_tolerance,'Stats','off',...
                  'NMax',10000,'Vectorized','on');
 	sol = bvp4c(@bvpRHS,@bvpBC,init_guess,options);
 
