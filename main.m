@@ -223,6 +223,8 @@ save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rh
 
 for time_index = 1 : n_time
 
+    disp([num2str(time_index),' / ',num2str(n_time),'.'])
+
     time = time_index * timestep;
 
     % Grow the configuration.
@@ -306,3 +308,19 @@ for time_index = 1 : n_time
     save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rho','eta','time')
  
 end
+
+% Plot the final scleral centreline and retina.
+figure
+hold on
+plot(z,r,'black','LineStyle','--','LineWidth',2)
+z_retina = z - h .* cos(theta) / 2;
+r_retina = r - h .* sin(theta) / 2;
+plot(z_retina,r_retina,'black','LineStyle','-','LineWidth',2)
+xlabel('$z$')
+ylabel('$r$')
+grid on
+axis equal
+axis tight
+xlim([0,max(xlim)])
+set(gca,'FontSize',24)
+legend({'Sclera','Retina'})
