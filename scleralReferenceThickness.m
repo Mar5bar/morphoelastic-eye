@@ -2,7 +2,7 @@ function H = scleralReferenceThickness(Sigma,referenceRadius,option)
 % scleralReferenceThickness	Compute the reference thickness of the sclera.
 % 
 % 	H = scleralReferenceThickness(Sigma,R,Option) computes the reference
-% 	arclength at Sigma for a spherical reference configuration of radius R.
+% 	thickness at Sigma for a spherical reference configuration of radius R.
 % 
 % 	Option is one of 'uniform' and 'non-uniform', generating the appropriate
 % 	reference uniform or non-uniform thickness.
