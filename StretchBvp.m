@@ -1,4 +1,4 @@
-function sol = StretchBvp(sigma,rho,init_guess,corneal_r,corneal_theta,IOP,C,H,psi,D,EB,bvp_tolerance)
+function sol = StretchBvp(sigma,rho,init_guess,corneal_r,corneal_theta,IOP,C,zeta,psi,D,EB,bvp_tolerance)
 % StretchBvp Solve the elastic boundary value problem for a thin shell.
 
 	% Unpack sigma(epsilon), the first entry of sigma.
@@ -6,14 +6,14 @@ function sol = StretchBvp(sigma,rho,init_guess,corneal_r,corneal_theta,IOP,C,H,p
 
 	% Precompute required derivatives.
 	drho_dsigma = gradient(rho,sigma);
-	dH_dsigma = gradient(H,sigma);
+	dzeta_dsigma = gradient(zeta,sigma);
 	dpsi_dsigma = gradient(psi,sigma);
 
 	% Create a scattered interpolant object so that the bvp solver can
 	% evaluate material properties at its computational mesh efficiently. 6
 	% functions will need interpolating.
 	sample_points = {sigma, 1:6};
-	F = griddedInterpolant(sample_points, [rho; drho_dsigma; H; dH_dsigma; psi; dpsi_dsigma]');
+	F = griddedInterpolant(sample_points, [rho; drho_dsigma; zeta; dzeta_dsigma; psi; dpsi_dsigma]');
 	F.Method = 'spline';
 
 	% Call bvp4c.
@@ -47,8 +47,8 @@ function rhs = bvpRHS(x,y)
     interpolated_funcs = F({x, 1:6})';
     rhoI = interpolated_funcs(1,:);
     drho_dsigmaI = interpolated_funcs(2,:);
-    HI = interpolated_funcs(3,:);
-    dH_dsigmaI = interpolated_funcs(4,:);
+    zetaI = interpolated_funcs(3,:);
+    dzeta_dsigmaI = interpolated_funcs(4,:);
     psiI = interpolated_funcs(5,:);
     dpsi_dsigmaI = interpolated_funcs(6,:);
 
@@ -72,10 +72,10 @@ function rhs = bvpRHS(x,y)
     % Now we can form the rhs following the equations of the accompanying
     % manuscript.
     rhs = [alpha_s .* ((sin(theta) ./ r - kappa) .* cos(theta) ./ r - Q ./ (r * EB));...
-           (alpha_s .* (kappa .* Q + 2 * HI .* cos(theta) .* (F_phi - F_s)) ./ r - 2 * F_s .* dH_dsigmaI - 2 * HI .* dF_s_dalpha_phi .* dalpha_phi_dsigma - 2 * HI .* dF_s_dpsi .* dpsi_dsigmaI) ./ (2 * HI .* dF_s_dalpha_s);...
+           (alpha_s .* (kappa .* Q + 2 * zetaI .* cos(theta) .* (F_phi - F_s)) ./ r - 2 * F_s .* dzeta_dsigmaI - 2 * zetaI .* dF_s_dalpha_phi .* dalpha_phi_dsigma - 2 * zetaI .* dF_s_dpsi .* dpsi_dsigmaI) ./ (2 * zetaI .* dF_s_dalpha_s);...
            alpha_s .* cos(theta);...
            alpha_s .* kappa;...
-           alpha_s .* (r * IOP - 2 * r .* kappa .* HI .* F_s - 2 * sin(theta) .* HI .* F_phi)];
+           alpha_s .* (r * IOP - 2 * r .* kappa .* zetaI .* F_s - 2 * sin(theta) .* zetaI .* F_phi)];
 
 end
 
@@ -92,7 +92,7 @@ F_s_a = C * (ya(2) / alpha_phi_a - 1 / (ya(2)^3 * alpha_phi_a^3)) ...
 % Form the residual, with three conditions on the left and two on the right.
 res = [ya(3) - sigma_epsilon * ya(2);
        ya(4) - sigma_epsilon * ya(1) * ya(2);
-       cos(ya(4)) * ya(5) - ya(3)^2 * IOP / 2 + 2 * sin(ya(4)) * ya(3) * H(1) * F_s_a;
+       cos(ya(4)) * ya(5) - ya(3)^2 * IOP / 2 + 2 * sin(ya(4)) * ya(3) * zeta(1) * F_s_a;
        yb(3) - corneal_r; % Set r at the cornea.
        yb(4) - corneal_theta % Set theta at the cornea.
        ];

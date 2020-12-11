@@ -118,9 +118,16 @@ gc = intrinsicGrowthCapacity(Sigma, Gamma, delta, eta0);
 % Compute the initial ungrown, deformed configuration.
 % ----------------------------------------------------
 
-% Initially, before growth has occured, sigma = Sigma and rho = R.
+% Initially, before growth has occured, sigma = Sigma, rho = R, and zeta = H.
 sigma = Sigma;
 rho = R;
+zeta = H;
+
+% Compute the growth stretches.
+gamma_s = gradient(sigma,Sigma);
+gamma_phi = rho ./ R;
+% Compute gamma_n using pointwise mass conservation.
+gamma_n = 1 ./ (gamma_s .* gamma_phi);
 
 % The solver requires an initial guess for all quantities.
 init_guess = struct();
@@ -137,7 +144,7 @@ init_guess.y(5,:) = 0;
 
 % Solve the elastic bvp. The solution will be evaluated at the material points
 % specified by the discretisation of Sigma, stored in sigma.
-sol = StretchBvp(sigma,rho,init_guess,corneal_r,corneal_theta,IOP,C,H,psi,D,EB,bvp_tolerance);
+sol = StretchBvp(sigma,rho,init_guess,corneal_r,corneal_theta,IOP,C,zeta,psi,D,EB,bvp_tolerance);
 
 % Extract the solution components kappa, alpha_s, r, theta, and Q. Note that
 % these are evaluated at the material points sigma(Sigma).
@@ -159,8 +166,8 @@ z = z - z(end) + corneal_z;
 % Recover s, the grown deformed arclength, at these material points.
 s = cumtrapz(sigma,alpha_s) + alpha_s(1) * epsilon;
 
-% Compute the deformed scleral thickness, h = H * alpha_n.
-h = H .* alpha_n;
+% Compute the deformed scleral thickness, h = zeta * alpha_n.
+h = zeta .* alpha_n;
 
 % ----------------------------------------------------------
 % Compute the growth capacity of this deformed configuration
@@ -214,7 +221,7 @@ eta = gc .* gv;
 % Save the configurations to file.
 time_index = 0;
 time = time_index * timestep;
-save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rho','eta','time')
+save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rho','zeta','alpha_s','alpha_phi','alpha_n','eta','time')
 
 % -----------------------
 % Growth-deformation loop
@@ -230,6 +237,14 @@ for time_index = 1 : n_time
     % Grow the configuration.
     rho = rho + timestep * eta .* max(r-rho,0);
     sigma = sigma + timestep * (cumtrapz(sigma, max(alpha_s - 1, 0) .* eta) + sigma(1) * eta(1) * max(alpha_s(1) - 1,0));
+
+    % In order to compute the undeformed grown thickness, we will apply
+    % pointwise mass conservation via the growth stretches.
+    gamma_s = gradient(sigma,Sigma);
+    gamma_phi = rho ./ R;
+    % Compute gamma_n using pointwise mass conservation.
+    gamma_n = 1 ./ (gamma_s .* gamma_phi);
+    zeta = gamma_n .* H;
     
     % Update the initial guess for the upcoming bvp solver to be the previous solution, but with updated sigma.
     init_guess.x = sigma;
@@ -238,7 +253,7 @@ for time_index = 1 : n_time
     % Solve the elastic bvp. The solution will again be evaluated at the
     % material points specified by the discretisation of Sigma, stored in
     % sigma.
-    sol = StretchBvp(sigma,rho,init_guess,corneal_r,corneal_theta,IOP,C,H,psi,D,EB,bvp_tolerance);
+    sol = StretchBvp(sigma,rho,init_guess,corneal_r,corneal_theta,IOP,C,zeta,psi,D,EB,bvp_tolerance);
 
     % Extract the solutions.
     kappa = sol(1,:);
@@ -259,8 +274,8 @@ for time_index = 1 : n_time
     % Recover s, the grown deformed arclength, at these material points.
     s = cumtrapz(sigma,alpha_s) + alpha_s(1) * epsilon;
 
-    % Compute the deformed scleral thickness, h = H * alpha_n.
-    h = H .* alpha_n;
+    % Compute the deformed scleral thickness, h = zeta * alpha_n.
+    h = zeta .* alpha_n;
     
     % --------------------------
     % Update the growth function
@@ -305,7 +320,7 @@ for time_index = 1 : n_time
     eta = gc .* gv;
 
     % Save the configurations to file.
-    save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rho','eta','time')
+    save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rho','zeta','alpha_s','alpha_phi','alpha_n','eta','time')
  
 end
 
