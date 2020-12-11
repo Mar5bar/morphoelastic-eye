@@ -193,11 +193,11 @@ retina_angle = atan2(r_retina, z_retina - BFS_point);
 % where both are defined, with the limiting factor being the target surface.
 mask = retina_angle < BFS_max_angle;
 retina_angle = retina_angle(mask);
-r_retina = r_retina(mask);
-z_retina = z_retina(mask);
+r_retina_masked = r_retina(mask);
+z_retina_masked = z_retina(mask);
 
 % Compute the radius of the retina relative to the point (0,0,BFS_point).
-radius_retina = sqrt(r_retina.^2 + (z_retina - BFS_point).^2);
+radius_retina = sqrt(r_retina_masked.^2 + (z_retina_masked - BFS_point).^2);
 
 % Reconstruct the target surface at the retina_angles using its quartic
 % representation.
@@ -221,7 +221,7 @@ eta = gc .* gv;
 % Save the configurations to file.
 time_index = 0;
 time = time_index * timestep;
-save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rho','zeta','alpha_s','alpha_phi','alpha_n','eta','time')
+save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rho','zeta','alpha_s','alpha_phi','alpha_n','eta','time','z_retina','r_retina')
 
 % -----------------------
 % Growth-deformation loop
@@ -293,11 +293,11 @@ for time_index = 1 : n_time
     % where both are defined, with the limiting factor being the target surface.
     mask = retina_angle < BFS_max_angle;
     retina_angle = retina_angle(mask);
-    r_retina = r_retina(mask);
-    z_retina = z_retina(mask);
+    r_retina_masked = r_retina(mask);
+    z_retina_masked = z_retina(mask);
 
     % Compute the radius of the retina relative to the point (0,0,BFS_point).
-    radius_retina = sqrt(r_retina.^2 + (z_retina - BFS_point).^2);
+    radius_retina = sqrt(r_retina_masked.^2 + (z_retina_masked - BFS_point).^2);
 
     % Reconstruct the target surface at the retina_angles using its quartic
     % representation.
@@ -320,7 +320,7 @@ for time_index = 1 : n_time
     eta = gc .* gv;
 
     % Save the configurations to file.
-    save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rho','zeta','alpha_s','alpha_phi','alpha_n','eta','time')
+    save(['output_timestep_',num2str(time_index),'.mat'],'h','s','z','r','sigma','rho','zeta','alpha_s','alpha_phi','alpha_n','eta','time','z_retina','r_retina')
  
 end
 
